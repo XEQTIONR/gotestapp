@@ -1,53 +1,125 @@
 package main
 
 import (
+	"net/http"
+	"strings"
+
 	"github.com/gin-contrib/multitemplate"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 )
+
+const userkey = "user"
+
+var secret = []byte("Secret123")
 
 func createMyRender() multitemplate.Renderer {
 	r := multitemplate.NewRenderer()
 
-	r.AddFromFiles("home", "templates/base.html", "templates/index/subtitle.html", "templates/index/paragraph.html")
-	r.AddFromFiles("article", "templates/base.html", "templates/article/subtitle.html", "templates/article/paragraph.html")
+	r.AddFromFiles("home", "templates/base.html", "templates/index/main.html")
+	r.AddFromFiles("article", "templates/base.html", "templates/article/main.html")
+	r.AddFromFiles("me", "templates/base.html", "templates/me/main.html")
 	return r
 }
 
+func AuthRequired(c *gin.Context) {
+
+	session := sessions.Default(c)
+	user := session.Get(userkey)
+	if user == nil {
+		// Abort the request with the appropriate error code
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	// Continue down the chain to handler etc
+	c.Next()
+
+}
+
+// me is the handler that will return the user information stored in the
+// session.
+func me(c *gin.Context) {
+	//session := sessions.Default(c)
+	//user := session.Get(userkey)
+	print("SOMETHING")
+	c.HTML(200, "me", gin.H{"user": "john"})
+	// c.JSON(http.StatusOK, gin.H{"user": user})
+}
+
+// status is the handler that will tell the user whether it is logged in or not.
+func status(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"status": "You are logged in"})
+}
+
+func login(c *gin.Context) {
+	session := sessions.Default(c)
+	username := c.PostForm("username")
+	password := c.PostForm("password")
+
+	// Validate form input
+	if strings.Trim(username, " ") == "" || strings.Trim(password, " ") == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Parameters can't be empty"})
+		return
+	}
+
+	// Check for username and password match, usually from a database
+	if username != "hello" || password != "itsme" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication failed"})
+		return
+	}
+
+	// Save the username in the session
+	session.Set(userkey, username) // In real world usage you'd set this to the users ID
+	if err := session.Save(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully authenticated user"})
+}
+
+// logout is the handler called for the user to log out.
+func logout(c *gin.Context) {
+	session := sessions.Default(c)
+	user := session.Get(userkey)
+	if user == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session token"})
+		return
+	}
+	session.Delete(userkey)
+	if err := session.Save(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
+}
+
 func main() {
-	r := gin.Default()
-	//r.LoadHTMLGlob("templates/*")
+	r := gin.New()
+	r.Use(sessions.Sessions("mysessions", cookie.NewStore(secret)))
+
 	r.HTMLRender = createMyRender()
-
-	// r.GET("/ping", func(c *gin.Context) {
-	// 	c.JSON(http.StatusOK, gin.H{
-	// 		"message": "pong",
-	// 	})
-	// })
-
-	// r.GET("/other", func(c *gin.Context) {
-	// 	c.JSON(http.StatusOK, gin.H{
-	// 		"message": "other page",
-	// 	})
-	// })
-
-	// r.GET("/templates/app", func(c *gin.Context) {
-	// 	c.HTML(http.StatusOK, "index", gin.H{"name": "app.tmpl"})
-	// })
-
-	// r.GET("/templates/base", func(c *gin.Context) {
-	// 	c.HTML(http.StatusOK, "base", gin.H{"name": "base.tmpl"})
-	// })
 
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(200, "home", gin.H{
-			"title": "Html5 Template Engine",
+			"title": "Home title",
 		})
 	})
 	r.GET("/article", func(c *gin.Context) {
 		c.HTML(200, "article", gin.H{
-			"title": "Html5 Article Engine",
+			"title": "Article title",
 		})
 	})
+
+	r.POST("login", login)
+	r.POST("logout", logout)
+
+	private := r.Group("/private")
+	private.Use(AuthRequired)
+	{
+		private.GET("/me", me)
+		private.GET("/status", status)
+	}
 
 	r.Run("127.0.0.1:9999") // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }
