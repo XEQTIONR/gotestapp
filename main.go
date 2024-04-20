@@ -10,6 +10,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type Person struct {
+	Name string
+	Age  int
+}
+
 const userkey = "user"
 
 var secret = []byte("Secret123")
@@ -17,7 +22,7 @@ var secret = []byte("Secret123")
 func createMyRender() multitemplate.Renderer {
 	r := multitemplate.NewRenderer()
 
-	r.AddFromFiles("home", "templates/base.html", "templates/index/main.html")
+	r.AddFromFiles("home", "templates/base.html", "templates/index/main.html", "templates/index/person.html")
 	r.AddFromFiles("article", "templates/base.html", "templates/article/main.html")
 	r.AddFromFiles("me", "templates/base.html", "templates/me/main.html")
 	return r
@@ -40,10 +45,9 @@ func AuthRequired(c *gin.Context) {
 // me is the handler that will return the user information stored in the
 // session.
 func me(c *gin.Context) {
-	//session := sessions.Default(c)
-	//user := session.Get(userkey)
-	print("SOMETHING")
-	c.HTML(200, "me", gin.H{"user": "john"})
+	session := sessions.Default(c)
+	user := session.Get(userkey)
+	c.HTML(200, "me", gin.H{"user": user, "title": "titleParam"})
 	// c.JSON(http.StatusOK, gin.H{"user": user})
 }
 
@@ -102,7 +106,10 @@ func main() {
 
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(200, "home", gin.H{
-			"title": "Home title",
+			"title":       "Home title",
+			"conditional": true,
+			"items":       []int{5, 6, 17, 2, 10},
+			"people":      []Person{{Name: "John Doe", Age: 20}, {Name: "Jane Doe", Age: 18}},
 		})
 	})
 	r.GET("/article", func(c *gin.Context) {

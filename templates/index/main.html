@@ -8,6 +8,29 @@
     <input name="password" />
 
     <button type="submit">Submit</button>
+
+    {{ if .conditional }}
+        <h2>conditional</h2>
+    {{ else }}
+        <h2>conditional false</h2>
+    {{ end }}
+
+    <ul>
+        {{ range .items }}
+            <li>{{ . }}</li>
+        {{ end }}
+    </ul>
+
+    {{ if .people }}
+    <ol>
+        {{ range .people }}
+           {{ template "person" .}}
+        {{ end }}
+    </ol>
+    {{ else }}
+    <h3>No People</h3>
+    {{ end }}
+    
 </form>
 
 {{ end }}
