@@ -22,7 +22,8 @@ var secret = []byte("Secret123")
 func createMyRender() multitemplate.Renderer {
 	r := multitemplate.NewRenderer()
 
-	r.AddFromFiles("home", "templates/base.html", "templates/index/main.html", "templates/index/person.html")
+	// r.AddFromFiles("home", "templates/base.html", "templates/index/main.html", "templates/index/person.html")
+	r.AddFromFiles("home", "dist/index.html")
 	r.AddFromFiles("article", "templates/base.html", "templates/article/main.html")
 	r.AddFromFiles("me", "templates/base.html", "templates/me/main.html")
 	return r
@@ -100,6 +101,8 @@ func logout(c *gin.Context) {
 
 func main() {
 	r := gin.New()
+	r.Static("/assets", "dist/assets")
+	r.Static("/dist", "dist")
 	r.Use(sessions.Sessions("mysessions", cookie.NewStore(secret)))
 
 	r.HTMLRender = createMyRender()
