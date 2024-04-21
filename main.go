@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -24,6 +25,7 @@ func createMyRender() multitemplate.Renderer {
 
 	// r.AddFromFiles("home", "templates/base.html", "templates/index/main.html", "templates/index/person.html")
 	r.AddFromFiles("home", "dist/index.html")
+	r.AddFromFiles("about", "dist/index.html")
 	r.AddFromFiles("article", "templates/base.html", "templates/article/main.html")
 	r.AddFromFiles("me", "templates/base.html", "templates/me/main.html")
 	return r
@@ -108,6 +110,7 @@ func main() {
 	r.HTMLRender = createMyRender()
 
 	r.GET("/", func(c *gin.Context) {
+		fmt.Println("/home called")
 		c.HTML(200, "home", gin.H{
 			"title":       "Home title",
 			"conditional": true,
@@ -115,6 +118,12 @@ func main() {
 			"people":      []Person{{Name: "John Doe", Age: 20}, {Name: "Jane Doe", Age: 18}},
 		})
 	})
+
+	r.GET("/about", func(c *gin.Context) {
+		fmt.Println("/about called")
+		c.HTML(200, "home", nil)
+	})
+
 	r.GET("/article", func(c *gin.Context) {
 		c.HTML(200, "article", gin.H{
 			"title": "Article title",

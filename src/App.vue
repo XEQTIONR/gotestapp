@@ -1,5 +1,6 @@
 <script setup>
-import { RouterLink, RouterView } from 'vue-router'
+// import { RouterLink, RouterView } from 'vue-router'
+import { RouterLink, RouterView } from '@/router/vue-router.mjs'
 import HelloWorld from './components/HelloWorld.vue'
 </script>
 
