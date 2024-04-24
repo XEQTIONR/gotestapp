@@ -12,8 +12,8 @@ import (
 )
 
 type Person struct {
-	Name string
-	Age  int
+	Name string `json:"name"`
+	Age  int    `json:"age"`
 }
 
 const userkey = "user"
@@ -25,8 +25,7 @@ func createMyRender() multitemplate.Renderer {
 
 	// r.AddFromFiles("home", "templates/base.html", "templates/index/main.html", "templates/index/person.html")
 	r.AddFromFiles("home", "dist/index.html")
-	r.AddFromFiles("about", "dist/index.html")
-	r.AddFromFiles("article", "templates/base.html", "templates/article/main.html")
+
 	r.AddFromFiles("me", "templates/base.html", "templates/me/main.html")
 	return r
 }
@@ -101,6 +100,15 @@ func logout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
 }
 
+func respond(c *gin.Context, data gin.H) {
+
+	if c.Request.Header.Get("AJAXRequest") == "true" {
+		c.JSON(http.StatusOK, data)
+	} else {
+		c.HTML(http.StatusOK, "home", data)
+	}
+}
+
 func main() {
 	r := gin.New()
 	r.Static("/assets", "dist/assets")
@@ -112,22 +120,54 @@ func main() {
 	r.GET("/", func(c *gin.Context) {
 		fmt.Println("/home called")
 		c.HTML(200, "home", gin.H{
-			"title":       "Home title",
-			"conditional": true,
-			"items":       []int{5, 6, 17, 2, 10},
-			"people":      []Person{{Name: "John Doe", Age: 20}, {Name: "Jane Doe", Age: 18}},
+			"data": map[string]interface{}{
+				"people": []Person{
+					{Name: "John Doe", Age: 20},
+					{Name: "Jane Doe", Age: 18},
+				}},
 		})
 	})
 
 	r.GET("/about", func(c *gin.Context) {
 		fmt.Println("/about called")
-		c.HTML(200, "home", nil)
+		fmt.Println(c.Request.Header.Get("AJAXRequest"))
+		fmt.Println(c.Request.Header.Get("Content-Type"))
+		fmt.Println(c.Request.Header.Get("Bings"))
+
+		var isAjax bool = c.Request.Header.Get("AJAXRequest") == "true"
+		if isAjax {
+			fmt.Println("is ajax request")
+			c.JSON(200, gin.H{
+				"data": map[string]interface{}{
+					"specie": "alien",
+					"age":    45,
+					"color":  "red",
+				},
+			})
+		} else {
+			fmt.Println("NOT ajax request")
+			c.HTML(200, "home", gin.H{
+				"data": map[string]interface{}{
+					"specie": "predator",
+					"age":    60,
+					"color":  "blue",
+				},
+			})
+		}
+
 	})
 
-	r.GET("/article", func(c *gin.Context) {
-		c.HTML(200, "article", gin.H{
-			"title": "Article title",
+	r.GET("/another", func(c *gin.Context) {
+		fmt.Println("/another called")
+		c.HTML(200, "home", gin.H{
+			"data": map[string]interface{}{
+				"people":  []Person{{Name: "John Doe", Age: 20}, {Name: "Jane Doe", Age: 18}},
+				"message": "Pong",
+			},
 		})
+		// c.JSON(200, gin.H{
+		// 	"message": "Pong",
+		// })
 	})
 
 	r.POST("login", login)

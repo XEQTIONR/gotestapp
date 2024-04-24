@@ -1,7 +1,16 @@
-<script setup>
-// import { RouterLink, RouterView } from 'vue-router'
+<script>
 import { RouterLink, RouterView } from '@/router/vue-router.mjs'
 import HelloWorld from './components/HelloWorld.vue'
+import axios from 'axios'
+
+window.axios = axios
+
+export default {
+  components: {
+    HelloWorld
+  },
+}
+
 </script>
 
 <template>
@@ -10,10 +19,11 @@ import HelloWorld from './components/HelloWorld.vue'
 
     <div class="wrapper">
       <HelloWorld msg="You did it!" />
-
+      
       <nav>
         <RouterLink to="/">Home</RouterLink>
         <RouterLink to="/about">About</RouterLink>
+        <RouterLink to="/another">Another</RouterLink>
       </nav>
     </div>
   </header>
