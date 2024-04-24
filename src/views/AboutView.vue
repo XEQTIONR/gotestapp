@@ -22,8 +22,8 @@
   }
 }
 </style>
-<!-- 
-<script setup>
+ 
+<!-- <script setup>
   import { onBeforeRouteLeave, onBeforeRouteUpdate } from '@/router/vue-router.mjs'
   import { ref } from 'vue'
 
@@ -35,8 +35,19 @@
 
   function setData() {
       busy.value = true
-      if (window.originURL != window.location.href || !window.cacheDirty) {
-        window.cacheDirty = true
+
+      if (window.originURL == window.location.href && window.valid) {
+        console.log('window.originURL == window.location.href && window.valid')
+        console.log('not making API Call')
+        console.log(window.apiData)
+        
+        const { age, color, specie } = window.apiData
+        age.value = age
+          color.value = color
+          specie.value = specie
+          busy.value = false
+        window.valid = false
+      } else { // ajax page load 
         console.log('making ajax call to ' + window.location.href)
         axios.get(window.location.href, {
           headers: {
@@ -51,18 +62,10 @@
           color.value = color
           specie.value = specie
           busy.value = false
+          window.valid = false
         })
-      } else {
-        console.log('not making API Call')
-        console.log(window.apiData)
-        
-        const { age, color, specie } = window.apiData
-        age.value = age
-          color.value = color
-          specie.value = specie
-          busy.value = false
       }
-  }
+    }
 
   function beforeRouteEnter(to, from, next) {
     console.log('AboutView beforeRouteEnter')
@@ -81,7 +84,7 @@
     console.log('AboutView onBeforeRouteUpdate')
   } )
 
-</script> -->
+</script>  -->
 
 <script>
   export default {
@@ -109,11 +112,7 @@
     setData() {
       this.busy = true
 
-      if (window.originURL == window.location.href && window.valid) {
-        console.log('window.originURL == window.location.href && window.valid')
-        console.log('not making API Call')
-        console.log(window.apiData)
-        
+      if (window.originURL == window.location.href && window.valid) {        
         const { age, color, specie } = window.apiData
         this.age = age
         this.color = color
@@ -121,16 +120,13 @@
         this.busy = false
         window.valid = false
       } else { // ajax page load 
-        console.log('making ajax call to ' + window.location.href)
         axios.get(window.location.href, {
           headers: {
             'AJAXRequest' : 'true',
           }
         })
         .then((res) => {
-          console.log('I am ajax -- response data:', res.data)
-
-          const { age, color, specie } = res.data.data
+          const { age, color, specie } = res.data
           this.age = age
           this.color = color
           this.specie = specie

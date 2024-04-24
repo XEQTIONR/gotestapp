@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"net/http"
 	"strings"
 
@@ -100,12 +101,13 @@ func logout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
 }
 
-func respond(c *gin.Context, data gin.H) {
-
+func respond(c *gin.Context, data map[string]any) {
 	if c.Request.Header.Get("AJAXRequest") == "true" {
-		c.JSON(http.StatusOK, data)
+		c.JSON(http.StatusOK, gin.H(data))
 	} else {
-		c.HTML(http.StatusOK, "home", data)
+		c.HTML(http.StatusOK, "home", gin.H{
+			"data": data,
+		})
 	}
 }
 
@@ -118,56 +120,35 @@ func main() {
 	r.HTMLRender = createMyRender()
 
 	r.GET("/", func(c *gin.Context) {
-		fmt.Println("/home called")
-		c.HTML(200, "home", gin.H{
-			"data": map[string]interface{}{
-				"people": []Person{
-					{Name: "John Doe", Age: 20},
-					{Name: "Jane Doe", Age: 18},
-				}},
-		})
+		people := []Person{
+			{Name: "John Doe", Age: 20},
+			{Name: "Jane Doe", Age: 18},
+			{Name: "Stan Doe", Age: 3},
+		}
+
+		two := []Person{
+			people[rand.Int()%3],
+			people[rand.Int()%3],
+		}
+
+		respond(c, map[string]interface{}{
+			"people": two})
 	})
 
 	r.GET("/about", func(c *gin.Context) {
-		fmt.Println("/about called")
-		fmt.Println(c.Request.Header.Get("AJAXRequest"))
-		fmt.Println(c.Request.Header.Get("Content-Type"))
-		fmt.Println(c.Request.Header.Get("Bings"))
-
-		var isAjax bool = c.Request.Header.Get("AJAXRequest") == "true"
-		if isAjax {
-			fmt.Println("is ajax request")
-			c.JSON(200, gin.H{
-				"data": map[string]interface{}{
-					"specie": "alien",
-					"age":    45,
-					"color":  "red",
-				},
-			})
-		} else {
-			fmt.Println("NOT ajax request")
-			c.HTML(200, "home", gin.H{
-				"data": map[string]interface{}{
-					"specie": "predator",
-					"age":    60,
-					"color":  "blue",
-				},
-			})
-		}
-
+		respond(c, map[string]interface{}{
+			"specie": "alien",
+			"age":    45,
+			"color":  "red",
+		})
 	})
 
 	r.GET("/another", func(c *gin.Context) {
 		fmt.Println("/another called")
-		c.HTML(200, "home", gin.H{
-			"data": map[string]interface{}{
-				"people":  []Person{{Name: "John Doe", Age: 20}, {Name: "Jane Doe", Age: 18}},
-				"message": "Pong",
-			},
+		respond(c, map[string]interface{}{
+			"people":  []Person{{Name: "John Doe", Age: 20}, {Name: "Jane Doe", Age: 18}},
+			"message": "Pong",
 		})
-		// c.JSON(200, gin.H{
-		// 	"message": "Pong",
-		// })
 	})
 
 	r.POST("login", login)
