@@ -12,20 +12,22 @@ export default {
   data() {
     return {
       busy: false,
-      all: null,
+      pageData: null,
     }
   },
   beforeRouteEnter (to, from, next) {
     next(vm => {
       vm.setData()
-  })
+    })
   },
 
   methods: {
     setData() {
+      this.busy = true
       useData()
         .then(response => {
-          this.all = response
+          this.pageData = response
+          this.busy = false
         })
     }
   }
@@ -36,8 +38,8 @@ export default {
 <template>
   <main>
     <TheWelcome />
-    <ol v-if="all">
-      <li v-for="person in all.people">{{ person.name }}</li>
+    <ol v-if="pageData">
+      <li v-for="person in pageData.people">{{ person.name }}</li>
     </ol>
   </main>
 </template>

@@ -27,7 +27,7 @@ import { useData } from '../composables/useData.js'
 export default {
   data () {
     return {
-      all: null,
+      pageData: null,
       busy: false,
     }
   },
@@ -45,7 +45,8 @@ export default {
       this.busy = true
       useData()
         .then(response => {
-          this.all = response
+          this.pageData = response
+          this.busy = false
         })
     }
   },
