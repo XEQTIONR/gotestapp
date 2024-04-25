@@ -102,13 +102,12 @@ func logout(c *gin.Context) {
 }
 
 func respond(c *gin.Context, data map[string]any) {
-	fmt.Println("respond")
+	acceptHeader := c.Request.Header.Get("Accept")
+
 	if strings.Contains(acceptHeader, "application/json") {
 		c.JSON(http.StatusOK, gin.H(data))
 	} else {
-		c.HTML(http.StatusOK, "home", gin.H{
-			"data": data,
-		})
+		c.HTML(http.StatusOK, "home", gin.H{"data": data})
 	}
 }
 

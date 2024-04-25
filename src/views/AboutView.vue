@@ -1,7 +1,6 @@
 <template>
   <div class="about">
     <h1>This is an about page</h1>
-    <div :style="{'background-color': all?.color ?? 'grey' }" class="status"></div>
     <div>Specie : {{ all?.specie }}</div>
     <div>Age: {{ all?.age }}</div>
   </div>
@@ -50,19 +49,5 @@ export default {
         })
     }
   },
-
-  computed: {
-    postJson() {
-      return JSON.stringify(this.post)
-    },
-
-    statusColor() {
-      if (this.all.busy) {
-        return 'red';
-      }
-
-      return 'green';
-    }
-  }
 }
 </script>
