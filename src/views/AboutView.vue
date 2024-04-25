@@ -1,10 +1,9 @@
 <template>
   <div class="about">
     <h1>This is an about page</h1>
-    <span>{{ watchman }}</span>
-    <div :style="{'background-color': color ?? 'grey' }" class="status"></div>
-    <div>Specie : {{ specie }}</div>
-    <div>Age: {{ age }}</div>
+    <div :style="{'background-color': all?.color ?? 'grey' }" class="status"></div>
+    <div>Specie : {{ all?.specie }}</div>
+    <div>Age: {{ all?.age }}</div>
   </div>
 </template>
 
@@ -22,118 +21,33 @@
   }
 }
 </style>
- 
-<!-- <script setup>
-  import { onBeforeRouteLeave, onBeforeRouteUpdate } from '@/router/vue-router.mjs'
-  import { ref } from 'vue'
-
-  const post = ref(null)
-  const age = ref(null)
-  const color = ref(null)
-  const specie = ref(null)
-  const busy = ref(false)
-
-  function setData() {
-      busy.value = true
-
-      if (window.originURL == window.location.href && window.valid) {
-        console.log('window.originURL == window.location.href && window.valid')
-        console.log('not making API Call')
-        console.log(window.apiData)
-        
-        const { age, color, specie } = window.apiData
-        age.value = age
-          color.value = color
-          specie.value = specie
-          busy.value = false
-        window.valid = false
-      } else { // ajax page load 
-        console.log('making ajax call to ' + window.location.href)
-        axios.get(window.location.href, {
-          headers: {
-            'AJAXRequest' : 'true',
-          }
-        })
-        .then((res) => {
-          console.log('I am ajax -- response data:', res.data)
-
-          const { age, color, specie } = res.data.data
-          age.value = age
-          color.value = color
-          specie.value = specie
-          busy.value = false
-          window.valid = false
-        })
-      }
-    }
-
-  function beforeRouteEnter(to, from, next) {
-    console.log('AboutView beforeRouteEnter')
-  }
-  
-  onBeforeRouteLeave((to, from) => {
-
-    console.log('AboutView onBeforeRouteLeave')
-    console.log('to: ', to)
-    console.log('from: ', from)
-    console.log('post', post)
-    console.log('post.value', post.value)
-  }) 
-
-  onBeforeRouteUpdate((to, from) => {
-    console.log('AboutView onBeforeRouteUpdate')
-  } )
-
-</script>  -->
 
 <script>
-  export default {
+import { useData } from '../composables/useData.js'
+
+export default {
   data () {
     return {
-      post: null,
-      age: null,
-      color: null,
-      specie: null,
+      all: null,
       busy: false,
     }
   },
   beforeRouteEnter (to, from, next) {
-      console.log('AboutView beforeRouteEnter')
-      next(vm => vm.setData())
+    next(vm => vm.setData())
   },
   // when route changes and this component is already rendered,
   // the logic will be slightly different.
   beforeRouteUpdate (to, from, next) {
-    console.log('AboutView beforeRouteUpdate')
-      next()
+    next()
   },
 
   methods: {
     setData() {
       this.busy = true
-
-      if (window.originURL == window.location.href && window.valid) {        
-        const { age, color, specie } = window.apiData
-        this.age = age
-        this.color = color
-        this.specie = specie
-        this.busy = false
-        window.valid = false
-      } else { // ajax page load 
-        axios.get(window.location.href, {
-          headers: {
-            'AJAXRequest' : 'true',
-          }
+      useData()
+        .then(response => {
+          this.all = response
         })
-        .then((res) => {
-          const { age, color, specie } = res.data
-          this.age = age
-          this.color = color
-          this.specie = specie
-          this.busy = false
-          window.valid = false
-        })
-      }
     }
   },
 
@@ -143,7 +57,7 @@
     },
 
     statusColor() {
-      if (this.busy) {
+      if (this.all.busy) {
         return 'red';
       }
 

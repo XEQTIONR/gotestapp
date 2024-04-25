@@ -1,7 +1,7 @@
 <script>
 import TheWelcome from '../components/TheWelcome.vue'
-//import { RouterLink } from 'vue-router'
-// import { RouterLink } from '@/router/vue-router.mjs'
+
+import { useData } from '../composables/useData.js'
 
 export default {
   
@@ -11,43 +11,22 @@ export default {
 
   data() {
     return {
-      people: [],
       busy: false,
+      all: null,
     }
   },
   beforeRouteEnter (to, from, next) {
-    next(vm => vm.setData())
+    next(vm => {
+      vm.setData()
+  })
   },
 
   methods: {
     setData() {
-      this.busy = true
-
-      if (window.originURL == window.location.href && window.valid) {
-        // dont make api call
-        console.log('window.apiData', window.apiData)
-
-        const { people } = window.apiData
-        this.people = people
-        this.busy = false
-      } else {
-
-        axios.get(window.location.href, {
-          headers: {
-            'AJAXRequest' : 'true',
-          }
+      useData()
+        .then(response => {
+          this.all = response
         })
-        .then((res) => {
-          //ajax page load
-          console.log('I am ajax -- response data:', res.data)
-          const { people } = res.data
-          this.people = people
-          this.busy = false
-          window.valid = false
-        })
-
-
-      }
     }
   }
 
@@ -57,8 +36,8 @@ export default {
 <template>
   <main>
     <TheWelcome />
-    <ol>
-      <li v-for="person in people">{{ person.name }}</li>
+    <ol v-if="all">
+      <li v-for="person in all.people">{{ person.name }}</li>
     </ol>
   </main>
 </template>

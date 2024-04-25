@@ -102,7 +102,8 @@ func logout(c *gin.Context) {
 }
 
 func respond(c *gin.Context, data map[string]any) {
-	if c.Request.Header.Get("AJAXRequest") == "true" {
+	fmt.Println("respond")
+	if strings.Contains(acceptHeader, "application/json") {
 		c.JSON(http.StatusOK, gin.H(data))
 	} else {
 		c.HTML(http.StatusOK, "home", gin.H{
