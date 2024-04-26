@@ -25,6 +25,12 @@ export default {
         <RouterLink to="/about">About</RouterLink>
         <RouterLink to="/another">Another</RouterLink>
         <RouterLink to="/login">Login</RouterLink>
+        <form 
+            action="/logout"
+            method="POST"
+        >
+            <button type="submit">Logout</button>
+        </form>
       </nav>
     </div>
   </header>

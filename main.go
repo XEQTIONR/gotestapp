@@ -32,13 +32,28 @@ func createMyRender() multitemplate.Renderer {
 
 func AuthRequired(c *gin.Context) {
 
+	fmt.Printf("Auth Required Middleware \n to : %s\n", c.Request.RequestURI)
+
 	session := sessions.Default(c)
 	user := session.Get(userkey)
+	fmt.Printf("AuthRequired user : %v\n", user)
 	if user == nil {
 		// Abort the request with the appropriate error code
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
+		//acceptHeader := c.Request.Header.Get("Accept")
+
+		// if strings.Contains(acceptHeader, "application/json") {
+		// 	c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		// 	//return
+		// } else {
+		fmt.Printf("c.Request.RequestURI : %v\n", c.Request.RequestURI)
+		session.Set("to", c.Request.RequestURI)
+		to := session.Get("to")
+		session.Save()
+		fmt.Printf("in AuthRequired middleware handler to: %v\n", to)
+		c.Redirect(http.StatusTemporaryRedirect, "/login")
+		// }
 	}
+
 	// Continue down the chain to handler etc
 	c.Next()
 
@@ -49,8 +64,8 @@ func AuthRequired(c *gin.Context) {
 func me(c *gin.Context) {
 	session := sessions.Default(c)
 	user := session.Get(userkey)
-	c.HTML(200, "me", gin.H{"user": user, "title": "titleParam"})
-	// c.JSON(http.StatusOK, gin.H{"user": user})
+	//c.HTML(200, "me", gin.H{"user": user, "title": "titleParam"})
+	c.JSON(http.StatusOK, gin.H{"user": user})
 }
 
 // status is the handler that will tell the user whether it is logged in or not.
@@ -80,8 +95,24 @@ func login(c *gin.Context) {
 	if err := session.Save(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session"})
 		return
+	} else {
+
+		to := session.Get("to")
+		toStr, ok := to.(string)
+
+		fmt.Printf("in login to := %v", to)
+
+		if to == nil {
+			c.Redirect(http.StatusFound, "/private/me")
+			return
+		}
+
+		if ok {
+			c.Redirect(http.StatusFound, string(toStr))
+		}
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Successfully authenticated user"})
+
+	//c.JSON(http.StatusOK, gin.H{"message": "Successfully authenticated user"})
 }
 
 // logout is the handler called for the user to log out.
@@ -100,7 +131,7 @@ func logout(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
+	c.Redirect(http.StatusFound, "/")
 }
 
 func respond(c *gin.Context, data map[string]any) {
@@ -143,7 +174,7 @@ func main() {
 				"people": two})
 		})
 
-		r.GET("/about", func(c *gin.Context) {
+		r.GET("about", func(c *gin.Context) {
 			respond(c, map[string]interface{}{
 				"specie": "alien",
 				"age":    45,
@@ -151,7 +182,7 @@ func main() {
 			})
 		})
 
-		r.GET("/another", func(c *gin.Context) {
+		r.GET("another", func(c *gin.Context) {
 			fmt.Println("/another called")
 			respond(c, map[string]interface{}{
 				"people":  []Person{{Name: "John Doe", Age: 20}, {Name: "Jane Doe", Age: 18}},
@@ -159,11 +190,17 @@ func main() {
 			})
 		})
 
-		r.GET("/login", func(c *gin.Context) {
+		r.GET("login", func(c *gin.Context) {
 			session := sessions.Default(c)
 			user := session.Get(userkey)
+			to := session.Get("to")
+			fmt.Printf("/login handler to: %v\n", to)
+			if user != nil {
+				c.Redirect(http.StatusFound, "/private/me")
+			} else {
+				respond(c, map[string]any{"user": user, "to": to})
+			}
 
-			respond(c, map[string]any{"user": user})
 		})
 
 		r.POST("login", login)
