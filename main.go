@@ -31,30 +31,22 @@ func createMyRender() multitemplate.Renderer {
 }
 
 func AuthRequired(c *gin.Context) {
-
-	fmt.Printf("Auth Required Middleware \n to : %s\n", c.Request.RequestURI)
-
 	session := sessions.Default(c)
 	user := session.Get(userkey)
-	fmt.Printf("AuthRequired user : %v\n", user)
-	if user == nil {
-		// Abort the request with the appropriate error code
-		//acceptHeader := c.Request.Header.Get("Accept")
 
-		// if strings.Contains(acceptHeader, "application/json") {
-		// 	c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		// 	//return
-		// } else {
-		fmt.Printf("c.Request.RequestURI : %v\n", c.Request.RequestURI)
+	if user == nil {
+		acceptHeader := c.Request.Header.Get("Accept")
+
 		session.Set("to", c.Request.RequestURI)
-		to := session.Get("to")
 		session.Save()
-		fmt.Printf("in AuthRequired middleware handler to: %v\n", to)
-		c.Redirect(http.StatusTemporaryRedirect, "/login")
-		// }
+
+		if strings.Contains(acceptHeader, "application/json") {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		} else {
+			c.Redirect(http.StatusTemporaryRedirect, "/login")
+		}
 	}
 
-	// Continue down the chain to handler etc
 	c.Next()
 
 }
@@ -91,35 +83,27 @@ func login(c *gin.Context) {
 	}
 
 	// Save the username in the session
+	to := session.Get("to")
+	toStr, ok := to.(string)
+	session.Delete("to")
 	session.Set(userkey, username) // In real world usage you'd set this to the users ID
+
 	if err := session.Save(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session"})
 		return
 	} else {
-
-		to := session.Get("to")
-		toStr, ok := to.(string)
-
-		fmt.Printf("in login to := %v", to)
-
 		if to == nil {
 			c.Redirect(http.StatusFound, "/private/me")
 			return
 		}
-
 		if ok {
 			c.Redirect(http.StatusFound, string(toStr))
 		}
 	}
-
-	//c.JSON(http.StatusOK, gin.H{"message": "Successfully authenticated user"})
 }
 
 // logout is the handler called for the user to log out.
 func logout(c *gin.Context) {
-
-	fmt.Printf("logout context: %v\n", c)
-
 	session := sessions.Default(c)
 	user := session.Get(userkey)
 	if user == nil {
@@ -174,7 +158,8 @@ func main() {
 				"people": two})
 		})
 
-		r.GET("about", func(c *gin.Context) {
+		r.GET("/about", func(c *gin.Context) {
+			fmt.Println("in /about")
 			respond(c, map[string]interface{}{
 				"specie": "alien",
 				"age":    45,
@@ -182,15 +167,7 @@ func main() {
 			})
 		})
 
-		r.GET("another", func(c *gin.Context) {
-			fmt.Println("/another called")
-			respond(c, map[string]interface{}{
-				"people":  []Person{{Name: "John Doe", Age: 20}, {Name: "Jane Doe", Age: 18}},
-				"message": "Pong",
-			})
-		})
-
-		r.GET("login", func(c *gin.Context) {
+		r.GET("/login", func(c *gin.Context) {
 			session := sessions.Default(c)
 			user := session.Get(userkey)
 			to := session.Get("to")
@@ -200,10 +177,9 @@ func main() {
 			} else {
 				respond(c, map[string]any{"user": user, "to": to})
 			}
-
 		})
 
-		r.POST("login", login)
+		r.POST("/login", login)
 		r.POST("logout", logout)
 
 		private := r.Group("/private")
@@ -211,6 +187,17 @@ func main() {
 		{
 			private.GET("/me", me)
 			private.GET("/status", status)
+			private.GET("/new", func(c *gin.Context) {
+				respond(c, map[string]interface{}{})
+			})
+
+			private.GET("/another", func(c *gin.Context) {
+				fmt.Println("/another called")
+				respond(c, map[string]interface{}{
+					"people":  []Person{{Name: "John Doe", Age: 20}, {Name: "Jane Doe", Age: 18}},
+					"message": "Pong",
+				})
+			})
 		}
 
 		r.Run("127.0.0.1:9999") // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")

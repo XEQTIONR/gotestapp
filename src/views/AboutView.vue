@@ -1,8 +1,15 @@
 <template>
   <div class="about">
     <h1>This is an about page</h1>
-    <div>Specie : {{ all?.specie }}</div>
-    <div>Age: {{ all?.age }}</div>
+    
+      <dl>
+        <dt>Color</dt>
+        <dd><div :style="{ width: '50px', height: '50px', 'background-color': pageData?.color ?? 'black' }"></div></dd>
+        <dt>Specie</dt>
+        <dd>{{ pageData?.specie }}</dd>
+        <dt>Age</dt>
+        <dd>{{ pageData?.age }}</dd>
+      </dl>
   </div>
 </template>
 
@@ -28,27 +35,10 @@ export default {
   data () {
     return {
       pageData: null,
-      busy: false,
     }
   },
   beforeRouteEnter (to, from, next) {
-    next(vm => vm.setData())
-  },
-  // when route changes and this component is already rendered,
-  // the logic will be slightly different.
-  beforeRouteUpdate (to, from, next) {
-    next()
-  },
-
-  methods: {
-    setData() {
-      this.busy = true
-      useData()
-        .then(response => {
-          this.pageData = response
-          this.busy = false
-        })
-    }
+    next(vm => vm.pageData = window.data)
   },
 }
 </script>

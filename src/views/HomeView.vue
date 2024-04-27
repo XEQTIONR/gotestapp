@@ -11,26 +11,12 @@ export default {
 
   data() {
     return {
-      busy: false,
       pageData: null,
     }
   },
   beforeRouteEnter (to, from, next) {
-    next(vm => {
-      vm.setData()
-    })
+    next(vm => vm.pageData = window.data)
   },
-
-  methods: {
-    setData() {
-      this.busy = true
-      useData()
-        .then(response => {
-          this.pageData = response
-          this.busy = false
-        })
-    }
-  }
 
 }
 </script>

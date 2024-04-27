@@ -23,8 +23,9 @@ export default {
       <nav>
         <RouterLink to="/">Home</RouterLink>
         <RouterLink to="/about">About</RouterLink>
-        <RouterLink to="/another">Another</RouterLink>
+        <RouterLink to="/private/another">Another</RouterLink>
         <RouterLink to="/login">Login</RouterLink>
+        <RouterLink to="/private/new">New</RouterLink>
         <form 
             action="/logout"
             method="POST"

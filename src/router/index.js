@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from '@/router/vue-router.mjs'
 import HomeView from '../views/HomeView.vue'
 import Login from '../views/Login.vue'
 import axios from 'axios'
+import { useData } from '../composables/useData.js'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,7 +22,7 @@ const router = createRouter({
       component: () => import('../views/AboutView.vue')
     },
     {
-      path: '/another',
+      path: '/private/another',
       name: 'another',
       // route level code-splitting
       // this generates a separate chunk (About.[hash].js) for this route
@@ -32,26 +33,20 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: Login
+    },
+    {
+      path: '/private/new',
+      name: 'new',
+      component: () => import('../views/NewView.vue')
     }
   ]
 })
 
-// router.beforeEach((to, from) => {
-//   console.log('before each from')
-//   console.log('to:')
-//   console.log(to)
-//   console.log('from:')
-//   console.log(from)
+router.beforeEach(async (to, from) => {
+  const data  = await useData(to.path, router)
+  window.data = data
 
-
-//   const fullPath = to.fullPath
-
-//   axios.get(fullPath)
-//     .then((res) => {
-//       console.log('response')
-//       console.log(res)
-//     })
-// })
+})
 
 
 
