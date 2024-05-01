@@ -21,7 +21,9 @@
         <span v-if="errs?.password">{{ errs.password }}</span>
         <span v-if="pageData?.errors?.password">{{ pageData?.errors?.password }}</span>
 
-        <SubmitButton @click="clearErrs" url="/login" :formData="auth" :onErr="setErrs" />
+        <SubmitButton @click="clearErrs" url="/login" :formData="auth" :onErr="setErrs">
+            Login
+        </SubmitButton>
     </form>
 </div>
 </template>

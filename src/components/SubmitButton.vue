@@ -1,5 +1,7 @@
 <template>
-    <button @click="action">SubmitButton</button>
+    <button @click="action">
+        <slot />
+    </button>
 </template>
 
 <script>
