@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -48,7 +49,6 @@ func AuthRequired(c *gin.Context) {
 	}
 
 	c.Next()
-
 }
 
 // me is the handler that will return the user information stored in the
@@ -65,10 +65,32 @@ func status(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "You are logged in"})
 }
 
+type authCreds struct {
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
 func login(c *gin.Context) {
+
+	var creds authCreds
+
 	session := sessions.Default(c)
-	username := c.PostForm("username")
-	password := c.PostForm("password")
+
+	acceptHeader := c.Request.Header.Get("Accept")
+
+	username := ""
+	password := ""
+
+	if strings.Contains(acceptHeader, "application/json") {
+		c.BindJSON(&creds)
+		username = creds.Username
+		password = creds.Password
+	} else {
+		username = c.PostForm("username")
+		password = c.PostForm("password")
+
+	}
+	to := session.Get("to")
 
 	// Validate form input
 	if strings.Trim(username, " ") == "" || strings.Trim(password, " ") == "" {
@@ -77,28 +99,60 @@ func login(c *gin.Context) {
 	}
 
 	// Check for username and password match, usually from a database
-	if username != "ishtehar" || password != "password" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication failed"})
-		return
-	}
+	if username == "ishtehar" && password == "password" {
+		toStr, ok := to.(string)
+		session.Delete("to")
+		session.Set(userkey, username) // In real world usage you'd set this to the users ID
 
-	// Save the username in the session
-	to := session.Get("to")
-	toStr, ok := to.(string)
-	session.Delete("to")
-	session.Set(userkey, username) // In real world usage you'd set this to the users ID
+		if err := session.Save(); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session"})
+			return
+		} else {
 
-	if err := session.Save(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session"})
-		return
+			acceptHeader := c.Request.Header.Get("Accept")
+			if strings.Contains(acceptHeader, "application/json") {
+				fmt.Println("login application/json")
+				var toLink string
+
+				if to == nil && ok {
+					toLink = "/private/me"
+				} else {
+					toLink = toStr
+				}
+
+				c.JSON(http.StatusOK, gin.H{"to": toLink})
+				return
+			} else {
+				if to == nil {
+					c.Redirect(http.StatusFound, "/private/me")
+					return
+				}
+				if ok {
+					c.Redirect(http.StatusFound, string(toStr))
+					return
+				}
+
+			}
+		}
 	} else {
-		if to == nil {
-			c.Redirect(http.StatusFound, "/private/me")
+		//c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication failed"})
+		errorMsg := gin.H{"password": "Password is incorrect or account does not exist"}
+
+		jsonMsg, marshalError := json.Marshal(errorMsg)
+
+		if marshalError == nil {
+			session.Set("errors", string(jsonMsg))
+		} else {
+			session.Set("errors", "Problem ")
+		}
+
+		if e := session.Save(); e != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"Session save error": e})
 			return
 		}
-		if ok {
-			c.Redirect(http.StatusFound, string(toStr))
-		}
+		toStr, _ := to.(string)
+		respond(c, map[string]interface{}{"error": errorMsg, "to": toStr})
+		return
 	}
 }
 
@@ -171,11 +225,14 @@ func main() {
 			session := sessions.Default(c)
 			user := session.Get(userkey)
 			to := session.Get("to")
-			fmt.Printf("/login handler to: %v\n", to)
+			errors := session.Get("errors")
+			session.Delete("errors")
+			session.Save()
+
 			if user != nil {
 				c.Redirect(http.StatusFound, "/private/me")
 			} else {
-				respond(c, map[string]any{"user": user, "to": to})
+				respond(c, map[string]any{"user": user, "to": to, "errors": errors})
 			}
 		})
 
