@@ -197,6 +197,8 @@ func main() {
 		r.HTMLRender = createMyRender()
 
 		r.GET("/", func(c *gin.Context) {
+			session := sessions.Default(c)
+			user := session.Get(userkey)
 			people := []Person{
 				{Name: "John Doe", Age: 20},
 				{Name: "Jane Doe", Age: 18},
@@ -209,7 +211,9 @@ func main() {
 			}
 
 			respond(c, map[string]interface{}{
-				"people": two})
+				"people": two,
+				"user":   user,
+			})
 		})
 
 		r.GET("/about", func(c *gin.Context) {
@@ -245,12 +249,15 @@ func main() {
 			private.GET("/me", me)
 			private.GET("/status", status)
 			private.GET("/new", func(c *gin.Context) {
-				respond(c, map[string]interface{}{})
+				respond(c, map[string]interface{}{
+					"user": sessions.Default(c).Get(userkey),
+				})
 			})
 
 			private.GET("/another", func(c *gin.Context) {
 				fmt.Println("/another called")
 				respond(c, map[string]interface{}{
+					"user":    sessions.Default(c).Get(userkey),
 					"people":  []Person{{Name: "John Doe", Age: 20}, {Name: "Jane Doe", Age: 18}},
 					"message": "Pong",
 				})
