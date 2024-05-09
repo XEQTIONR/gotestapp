@@ -1,8 +1,7 @@
 // import { createRouter, createWebHistory } from 'vue-router'
 import { createRouter, createWebHistory } from '@/router/vue-router.mjs'
 import HomeView from '../views/HomeView.vue'
-import Login from '../views/Login.vue'
-import axios from 'axios'
+import LoginView from '../views/LoginView.vue'
 import { useData } from '../composables/useData.js'
 
 const router = createRouter({
@@ -32,7 +31,7 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: Login
+      component: LoginView
     },
     {
       path: '/private/new',

@@ -1,13 +1,9 @@
 <template>
-    <div>
-    <form 
-        v-if="pageData?.user"
-        action="/logout"
-        method="POST"
-    >
-        <h3>{{ pageData.user }}</h3>
-        <button type="submit">Logout</button>
-    </form>
+<div>  
+    <h3 v-if="pageData?.user">{{ pageData.user }}</h3>
+    <SubmitButton v-if="pageData?.user" @click="clearErrs" url="/logout" :formData="null">
+        Logout
+    </SubmitButton>
     <form
         v-else
         action="/login" 

@@ -1,12 +1,15 @@
 package main
 
 import (
+	"gotestapp/user"
+
 	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gin-contrib/multitemplate"
 	"github.com/gin-contrib/sessions"
@@ -172,6 +175,41 @@ func logout(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/")
 }
 
+func register(c *gin.Context) {
+	//var user user.User
+	type userInfo struct {
+		Username string `json:"username"`
+		Password string `binding:"required"`
+		Email    string `json:"email"`
+	}
+
+	var (
+		credentials  userInfo
+		username     string
+		password     string
+		email        string
+		acceptHeader string = c.Request.Header.Get("Accept")
+	)
+
+	if strings.Contains(acceptHeader, "application/json") {
+		c.BindJSON(&credentials)
+		username = credentials.Username
+		password = credentials.Password
+		email = credentials.Email
+	} else {
+		username = c.PostForm("username")
+		password = c.PostForm("password")
+		email = c.PostForm("email")
+	}
+
+	user := user.User{Username: username, Email: email}
+	if err := user.SetPassword(password); err != nil {
+		fmt.Printf("ERR SET PASSWORD: %v\n", err)
+	}
+
+	respond(c, map[string]any{"user": user, "password": password})
+}
+
 func respond(c *gin.Context, data map[string]any) {
 	acceptHeader := c.Request.Header.Get("Accept")
 
@@ -225,6 +263,11 @@ func main() {
 			})
 		})
 
+		r.GET("/test-route", func(c *gin.Context) {
+			fmt.Println("TEST ROUTE CALLED")
+			c.JSON(http.StatusOK, gin.H{"tst0field": "tesst-data"})
+		})
+
 		r.GET("/login", func(c *gin.Context) {
 			session := sessions.Default(c)
 			user := session.Get(userkey)
@@ -243,6 +286,8 @@ func main() {
 		r.POST("/login", login)
 		r.POST("logout", logout)
 
+		r.POST("/register", register)
+
 		private := r.Group("/private")
 		private.Use(AuthRequired)
 		{
@@ -259,7 +304,7 @@ func main() {
 				respond(c, map[string]interface{}{
 					"user":    sessions.Default(c).Get(userkey),
 					"people":  []Person{{Name: "John Doe", Age: 20}, {Name: "Jane Doe", Age: 18}},
-					"message": "Pong",
+					"message": time.Now().String(),
 				})
 			})
 		}

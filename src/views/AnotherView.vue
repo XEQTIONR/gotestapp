@@ -2,17 +2,18 @@
     <User :username="pageData?.user" />
     <div>
         <h1>AnotherView.vue</h1>
-        <h2 v-if="pageData">{{ pageData.message }}</h2>
+        
         
         <ol v-if="pageData">
-            <li v-for="person in pageData.people">{{ person.name }}</li>
+            <li v-for="person in pageData.people" :key="person.name">{{ person.name }}</li>
         </ol>
+
+        <p v-if="pageData?.message">{{ pageData.message }}</p>
     </div>
     
 </template>
 
 <script>
-import { useData } from '../composables/useData.js'
 import User from '../components/User.vue'
 
 export default {

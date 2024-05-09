@@ -26,7 +26,7 @@
                         } else if (res?.data?.to) {
                             this.$router.push(res.data.to)
                         } else {
-                            this.$router.push('/private/me')
+                            this.$router.push('/')
                         }
                     })
                     .catch(err => {
