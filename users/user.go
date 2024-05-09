@@ -9,6 +9,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var dbString string = "root:strong_password@tcp(127.0.0.1:3306)/use_me_db"
+
 type User struct {
 	Id           int64  `json:"id"`
 	Username     string `json:"username" gorm:"index;size:256"`
@@ -40,7 +42,7 @@ func (u *User) SetPassword(password string) error {
 }
 
 func (u *User) Save() error {
-	db, err := sql.Open("mysql", "root:strong_password@tcp(127.0.0.1:3306)/use_me_db")
+	db, err := sql.Open("mysql", dbString)
 	if err == nil {
 		defer db.Close()
 		if insert, err := db.ExecContext(
@@ -63,4 +65,23 @@ func (u *User) Save() error {
 		return err //insert error
 	}
 	return err //sql error
+}
+
+func FindByUsername(username string) User {
+	fmt.Println("findByUsername : " + username)
+	var u User
+	db, err := sql.Open("mysql", dbString)
+	if err == nil {
+		defer db.Close()
+		if results, err := db.Query(fmt.Sprintf(`
+			SELECT id, username, email, password_hash, created_at, updated_at
+			FROM users
+			WHERE username = '%s' AND deleted_at IS NULL
+			LIMIT 1
+		`, username)); err == nil {
+			results.Next()
+			results.Scan(&u.Id, &u.Username, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
+		}
+	}
+	return u
 }

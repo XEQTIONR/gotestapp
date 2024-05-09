@@ -7,7 +7,8 @@ window.axios = axios
 
 export default {
   components: {
-    AppHeader
+    AppHeader,
+    RouterView
   },
 }
 

@@ -75,14 +75,13 @@ type authCreds struct {
 
 func login(c *gin.Context) {
 
-	var creds authCreds
-
-	session := sessions.Default(c)
-
-	acceptHeader := c.Request.Header.Get("Accept")
-
-	username := ""
-	password := ""
+	var (
+		creds        authCreds
+		session      sessions.Session = sessions.Default(c)
+		acceptHeader string           = c.Request.Header.Get("Accept")
+		username     string           = ""
+		password     string           = ""
+	)
 
 	if strings.Contains(acceptHeader, "application/json") {
 		c.BindJSON(&creds)
@@ -93,7 +92,6 @@ func login(c *gin.Context) {
 		password = c.PostForm("password")
 
 	}
-	to := session.Get("to")
 
 	// Validate form input
 	if strings.Trim(username, " ") == "" || strings.Trim(password, " ") == "" {
@@ -102,61 +100,59 @@ func login(c *gin.Context) {
 	}
 
 	// Check for username and password match, usually from a database
-	if username == "ishtehar" && password == "password" {
-		toStr, ok := to.(string)
-		session.Delete("to")
-		session.Set(userkey, username) // In real world usage you'd set this to the users ID
+	user := users.FindByUsername(username)
 
-		if err := session.Save(); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session"})
-			return
-		} else {
+	to := session.Get("to")
+	toStr, ok := to.(string)
+	session.Delete("to")
 
-			acceptHeader := c.Request.Header.Get("Accept")
-			if strings.Contains(acceptHeader, "application/json") {
-				fmt.Println("login application/json")
-				var toLink string
-
-				if to == nil && ok {
-					toLink = "/private/me"
-				} else {
-					toLink = toStr
-				}
-
-				c.JSON(http.StatusOK, gin.H{"to": toLink})
+	if user.Id > 0 {
+		if user.CheckPasswordHash(password) {
+			session.Set(userkey, user.Username) // In real world usage you'd set this to the users ID
+			if err := session.Save(); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session in login"})
 				return
 			} else {
-				if to == nil {
-					c.Redirect(http.StatusFound, "/private/me")
-					return
-				}
-				if ok {
-					c.Redirect(http.StatusFound, string(toStr))
-					return
-				}
+				acceptHeader := c.Request.Header.Get("Accept")
+				if strings.Contains(acceptHeader, "application/json") {
+					var toLink string
+					if !ok {
+						toLink = "/private/me"
+					} else {
+						toLink = toStr
+					}
 
+					c.JSON(http.StatusOK, gin.H{"to": toLink})
+					return
+				} else {
+					if to == nil {
+						c.Redirect(http.StatusFound, "/private/me")
+						return
+					}
+					if ok {
+						c.Redirect(http.StatusFound, toStr)
+						return
+					}
+				}
 			}
 		}
+	}
+
+	errorMsg := gin.H{"password": "Password is incorrect or account does not exist"}
+	jsonMsg, marshalError := json.Marshal(errorMsg)
+
+	if marshalError == nil {
+		session.Set("errors", string(jsonMsg))
 	} else {
-		//c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication failed"})
-		errorMsg := gin.H{"password": "Password is incorrect or account does not exist"}
+		session.Set("errors", "Problem ")
+	}
 
-		jsonMsg, marshalError := json.Marshal(errorMsg)
-
-		if marshalError == nil {
-			session.Set("errors", string(jsonMsg))
-		} else {
-			session.Set("errors", "Problem ")
-		}
-
-		if e := session.Save(); e != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"Session save error": e})
-			return
-		}
-		toStr, _ := to.(string)
-		respond(c, map[string]interface{}{"error": errorMsg, "to": toStr})
+	if e := session.Save(); e != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"Session save error": e})
 		return
 	}
+
+	respond(c, map[string]interface{}{"error": errorMsg, "to": toStr})
 }
 
 // logout is the handler called for the user to log out.
