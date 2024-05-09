@@ -3,5 +3,4 @@ CREATE TABLE IF NOT EXISTS users(
     username VARCHAR(256),
     password_hash VARCHAR(256) NOT NULL,
     email VARCHAR(256),
-    name VARCHAR(256) NOT NULL 
 )

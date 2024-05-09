@@ -1,7 +1,7 @@
 package main
 
 import (
-	"gotestapp/user"
+	"gotestapp/users"
 
 	"encoding/json"
 	"fmt"
@@ -202,9 +202,13 @@ func register(c *gin.Context) {
 		email = c.PostForm("email")
 	}
 
-	user := user.User{Username: username, Email: email}
+	user := users.User{Username: username, Email: email}
 	if err := user.SetPassword(password); err != nil {
 		fmt.Printf("ERR SET PASSWORD: %v\n", err)
+	}
+	fmt.Printf("USER: %v\n", user)
+	if err := user.Save(); err != nil {
+		fmt.Printf("ERROR user to db : %v\n", err)
 	}
 
 	respond(c, map[string]any{"user": user, "password": password})
