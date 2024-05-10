@@ -1,9 +1,6 @@
 <script>
 import { RouterView } from '@/router/vue-router.mjs'
 import AppHeader from './components/Header.vue'
-import axios from 'axios'
-
-window.axios = axios
 
 export default {
   components: {
