@@ -81,7 +81,7 @@
 </style>
 
 <script>
-import { RouterLink } from '@/router/vue-router.mjs'
+import { RouterLink } from 'vue-router'
 
 export default {
     components: { RouterLink },

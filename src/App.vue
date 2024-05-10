@@ -1,5 +1,5 @@
 <script>
-import { RouterView } from '@/router/vue-router.mjs'
+import { RouterView } from 'vue-router'
 import AppHeader from './components/Header.vue'
 
 export default {
