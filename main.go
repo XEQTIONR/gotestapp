@@ -59,8 +59,8 @@ func AuthRequired(c *gin.Context) {
 func me(c *gin.Context) {
 	session := sessions.Default(c)
 	user := session.Get(userkey)
-	//c.HTML(200, "me", gin.H{"user": user, "title": "titleParam"})
-	c.JSON(http.StatusOK, gin.H{"user": user})
+
+	respond(c, map[string]any{"user": user})
 }
 
 // status is the handler that will tell the user whether it is logged in or not.
@@ -152,7 +152,8 @@ func login(c *gin.Context) {
 		return
 	}
 
-	respond(c, map[string]interface{}{"error": errorMsg, "to": toStr})
+	respondWithError(c, map[string]interface{}{"error": errorMsg, "to": toStr}, http.StatusUnprocessableEntity)
+	//respond(c, map[string]interface{}{"error": errorMsg, "to": toStr})
 }
 
 // logout is the handler called for the user to log out.
@@ -174,49 +175,65 @@ func logout(c *gin.Context) {
 func register(c *gin.Context) {
 	//var user user.User
 	type userInfo struct {
-		Username string `json:"username"`
-		Password string `binding:"required"`
-		Email    string `json:"email"`
+		Username        string `json:"username"`
+		Password        string `binding:"required"`
+		confirmPassword string `binding:"required"`
+		Email           string `json:"email"`
 	}
 
 	var (
-		credentials  userInfo
-		username     string
-		password     string
-		email        string
-		acceptHeader string = c.Request.Header.Get("Accept")
+		credentials     userInfo
+		username        string
+		password        string
+		confirmPassword string
+		email           string
+		acceptHeader    string = c.Request.Header.Get("Accept")
 	)
 
 	if strings.Contains(acceptHeader, "application/json") {
 		c.BindJSON(&credentials)
 		username = credentials.Username
 		password = credentials.Password
+		confirmPassword = credentials.confirmPassword
 		email = credentials.Email
 	} else {
 		username = c.PostForm("username")
 		password = c.PostForm("password")
+		confirmPassword = c.PostForm("confirmPassword")
 		email = c.PostForm("email")
 	}
 
-	user := users.User{Username: username, Email: email}
-	if err := user.SetPassword(password); err != nil {
-		fmt.Printf("ERR SET PASSWORD: %v\n", err)
-	}
-	fmt.Printf("USER: %v\n", user)
-	if err := user.Save(); err != nil {
-		fmt.Printf("ERROR user to db : %v\n", err)
-	}
+	if password == confirmPassword {
+		user := users.User{Username: username, Email: email}
+		if err := user.SetPassword(password); err != nil {
+			fmt.Printf("ERR SET PASSWORD: %v\n", err)
+		}
+		fmt.Printf("USER: %v\n", user)
+		if err := user.Save(); err != nil {
+			fmt.Printf("ERROR user to db : %v\n", err)
+		}
 
-	respond(c, map[string]any{"user": user, "password": password})
+		respond(c, map[string]any{"user": user, "password": password})
+	}
 }
 
 func respond(c *gin.Context, data map[string]any) {
 	acceptHeader := c.Request.Header.Get("Accept")
 
 	if strings.Contains(acceptHeader, "application/json") {
-		c.JSON(http.StatusOK, gin.H(data))
+		c.JSON(http.StatusOK, data)
 	} else {
 		c.HTML(http.StatusOK, "home", gin.H{"data": data})
+	}
+}
+
+func respondWithError(c *gin.Context, err map[string]any, errorCode int) {
+	acceptHeader := c.Request.Header.Get("Accept")
+
+	if strings.Contains(acceptHeader, "application/json") {
+		c.JSON(errorCode, err)
+	} else {
+		c.HTML(errorCode, "home", gin.H{"error": err})
 	}
 }
 

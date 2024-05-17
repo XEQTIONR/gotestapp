@@ -22,17 +22,16 @@ export default  {
             e.preventDefault()
             axios.post(this.url, this.formData, {withCredentials: true})
                 .then(res => {
-                    if (res?.data?.error) {
-                        this.$router.push('/login')
-                        this.onErr(res.data.error)
-                    } else if (res?.data?.to) {
+                    if (res?.data?.to) {
                         this.$router.push(res.data.to)
                     } else {
                         this.$router.push('/')
                     }
                 })
                 .catch(err => {
-                    console.log(err)
+                    if (this.onErr) {
+                        this.onErr(err?.response?.data?.error)
+                    }
                 })
         }
     }

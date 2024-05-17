@@ -29,6 +29,11 @@ const router = createRouter({
       component: () => import('../views/AnotherView.vue')
     },
     {
+      path: '/private/me',
+      name: 'me',
+      component: () => import ('../views/CurrentUserView.vue')
+    },
+    {
       path: '/login',
       name: 'login',
       component: LoginView
@@ -41,10 +46,9 @@ const router = createRouter({
   ]
 })
 
-router.beforeEach(async (to, from) => {
+router.beforeEach(async (to) => {
   const data  = await useData(to.path, router)
   window.data = data
-
 })
 
 

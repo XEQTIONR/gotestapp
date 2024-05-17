@@ -1,4 +1,5 @@
 <template>
+    <AppHeader />
     <User :username="pageData?.user" />
     <div>
         <h1>AnotherView.vue</h1>
@@ -15,6 +16,7 @@
 
 <script>
 import User from '../components/User.vue'
+import AppHeader from '../components/Header.vue'
 
 export default {
   
@@ -23,6 +25,7 @@ export default {
   },
 
   components: {
+    AppHeader,
     User
   },
 

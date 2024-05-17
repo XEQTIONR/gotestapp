@@ -1,4 +1,5 @@
 <template>
+  <AppHeader />
   <div class="about">
     <h1>This is an about page</h1>
     
@@ -29,9 +30,14 @@
 </style>
 
 <script>
-import { useData } from '../composables/useData.js'
+
+import AppHeader from '../components/Header.vue'
 
 export default {
+
+  components: {
+    AppHeader
+  },
   data () {
     return {
       pageData: null,

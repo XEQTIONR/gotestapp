@@ -1,12 +1,12 @@
 <script>
 import TheWelcome from '../components/TheWelcome.vue'
 import User from '../components/User.vue'
-
-import { useData } from '../composables/useData.js'
+import AppHeader from '../components/Header.vue'
 
 export default {
   
   components: {
+    AppHeader,
     TheWelcome,
     User,
   },
@@ -25,6 +25,7 @@ export default {
 
 <template>
   <main>
+    <AppHeader />
     <User :username="pageData?.user" />
     <TheWelcome />
     

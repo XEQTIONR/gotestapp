@@ -1,4 +1,5 @@
 <template>
+<AppHeader />
 <div>  
     <h3 v-if="pageData?.user">{{ pageData.user }}</h3>
     <SubmitButton v-if="pageData?.user" @click="clearErrs" url="/logout" :formData="null">
@@ -27,10 +28,14 @@
 <script>
 
 import SubmitButton from '../components/SubmitButton.vue'
+import AppHeader from '../components/Header.vue'
 
 export default {
 
-    components: { SubmitButton }, 
+    components: { 
+        AppHeader,
+        SubmitButton,
+    }, 
 
     data () {
         return {
@@ -45,6 +50,7 @@ export default {
 
     methods: {
         setErrs(val) {
+            this.$router.push('/login')
             this.errs = val
         },
         clearErrs() {
