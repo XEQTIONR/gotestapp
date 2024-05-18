@@ -7,6 +7,7 @@
           <AnchorLink class="ml-6 font-bold" to="/about">About</AnchorLink>
           <AnchorLink class="ml-6 font-bold" to="/private/another">Another</AnchorLink>
           <AnchorLink class="ml-6 font-bold" to="/login">Login</AnchorLink>
+          <AnchorLink class="ml-6 font-bold" to="/register">Register</AnchorLink>
           <AnchorLink class="ml-6 font-bold" to="/private/new">New</AnchorLink>
           <AnchorLink class="ml-6 font-bold" to="/private/me">Me</AnchorLink>
         </nav>

@@ -50,7 +50,6 @@ export default {
 
     methods: {
         setErrs(val) {
-            this.$router.push('/login')
             this.errs = val
         },
         clearErrs() {
@@ -64,6 +63,10 @@ export default {
 
     mounted() {
         this.clearErrs();
+        
+        if (this.pageData?.user) {
+            this.$router.push('/private/me')
+        }
     },
 
     beforeRouteEnter (to, from, next) {

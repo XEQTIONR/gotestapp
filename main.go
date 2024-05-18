@@ -177,7 +177,7 @@ func register(c *gin.Context) {
 	type userInfo struct {
 		Username        string `json:"username"`
 		Password        string `binding:"required"`
-		confirmPassword string `binding:"required"`
+		ConfirmPassword string `binding:"required"`
 		Email           string `json:"email"`
 	}
 
@@ -194,7 +194,7 @@ func register(c *gin.Context) {
 		c.BindJSON(&credentials)
 		username = credentials.Username
 		password = credentials.Password
-		confirmPassword = credentials.confirmPassword
+		confirmPassword = credentials.ConfirmPassword
 		email = credentials.Email
 	} else {
 		username = c.PostForm("username")
@@ -303,6 +303,20 @@ func main() {
 		r.POST("/login", login)
 		r.POST("logout", logout)
 
+		r.GET("/register", func(c *gin.Context) {
+			session := sessions.Default(c)
+			user := session.Get(userkey)
+			to := session.Get("to")
+			errors := session.Get("errors")
+			session.Delete("errors")
+			session.Save()
+
+			if user != nil {
+				c.Redirect(http.StatusFound, "/private/me")
+			} else {
+				respond(c, map[string]any{"to": to, "errors": errors})
+			}
+		})
 		r.POST("/register", register)
 
 		private := r.Group("/private")

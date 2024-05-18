@@ -4,11 +4,11 @@
         <label>Username</label>
         <input v-model="registerForm.username" />
         <label>Email</label>
-        <input v-model="registerForm.email"  />
+        <input type="email" v-model="registerForm.email"  />
         <label>Password</label>
-        <input v-model="registerForm.password" />
+        <input type="password" v-model="registerForm.password" />
         <label>Confirm Password</label>
-        <input v-model="registerForm.confirmPassword" />
+        <input type="password" v-model="registerForm.confirmPassword" />
 
         <SubmitButton url="/register" :form-data="registerForm">Register</SubmitButton>
     </form>
