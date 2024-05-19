@@ -1,10 +1,10 @@
 package main
 
 import (
-	"gotestapp/users"
-
 	"encoding/json"
 	"fmt"
+	"gotestapp/mail"
+	"gotestapp/users"
 	"math/rand"
 	"net/http"
 	"os"
@@ -173,7 +173,6 @@ func logout(c *gin.Context) {
 }
 
 func register(c *gin.Context) {
-	//var user user.User
 	type userInfo struct {
 		Username        string `json:"username"`
 		Password        string `binding:"required"`
@@ -208,9 +207,11 @@ func register(c *gin.Context) {
 		if err := user.SetPassword(password); err != nil {
 			fmt.Printf("ERR SET PASSWORD: %v\n", err)
 		}
-		fmt.Printf("USER: %v\n", user)
+
 		if err := user.Save(); err != nil {
 			fmt.Printf("ERROR user to db : %v\n", err)
+		} else {
+			mail.Send(email, "You registered to LocalHostSite", "Thanks for signing up to local host site.")
 		}
 
 		respond(c, map[string]any{"user": user, "password": password})
@@ -272,7 +273,6 @@ func main() {
 		})
 
 		r.GET("/about", func(c *gin.Context) {
-			fmt.Println("in /about")
 			respond(c, map[string]interface{}{
 				"specie": "alien",
 				"age":    45,
@@ -281,7 +281,6 @@ func main() {
 		})
 
 		r.GET("/test-route", func(c *gin.Context) {
-			fmt.Println("TEST ROUTE CALLED")
 			c.JSON(http.StatusOK, gin.H{"tst0field": "tesst-data"})
 		})
 
@@ -331,7 +330,6 @@ func main() {
 			})
 
 			private.GET("/another", func(c *gin.Context) {
-				fmt.Println("/another called")
 				respond(c, map[string]interface{}{
 					"user":    sessions.Default(c).Get(userkey),
 					"people":  []Person{{Name: "John Doe", Age: 20}, {Name: "Jane Doe", Age: 18}},
