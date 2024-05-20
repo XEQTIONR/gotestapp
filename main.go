@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"gotestapp/mail"
+	"gotestapp/middleware"
 	"gotestapp/users"
 	"math/rand"
 	"net/http"
@@ -164,7 +165,10 @@ func logout(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session token"})
 		return
 	}
+
 	session.Delete(userkey)
+	session.Delete("csrf_token")
+
 	if err := session.Save(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session"})
 		return
@@ -220,6 +224,9 @@ func register(c *gin.Context) {
 
 func respond(c *gin.Context, data map[string]any) {
 	acceptHeader := c.Request.Header.Get("Accept")
+	session := sessions.Default(c)
+
+	data["csrf_token"] = session.Get("csrf_token")
 
 	if strings.Contains(acceptHeader, "application/json") {
 		c.JSON(http.StatusOK, data)
@@ -249,6 +256,8 @@ func main() {
 		r.Static("/assets", "dist/assets")
 		r.Static("/dist", "dist")
 		r.Use(sessions.Sessions("mysessions", cookie.NewStore(secret)))
+
+		r.Use(middleware.GenerateCSRFToken)
 
 		r.HTMLRender = createMyRender()
 

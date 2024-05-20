@@ -6,19 +6,20 @@
         Logout
     </SubmitButton>
     <form
+        class="flex flex-col"
         v-else
         action="/login" 
         method="POST"
     >
         <label>Username</label>
-        <input v-model="auth.username" type="text" name="username" />
+        <input class="bg-gray-100" v-model="auth.username" type="text" name="username" />
 
         <label>Password</label>
-        <input v-model="auth.password" type="password" name="password" />
+        <input class="bg-gray-100" v-model="auth.password" type="password" name="password" />
         <span v-if="errs?.password">{{ errs.password }}</span>
         <span v-if="pageData?.errors?.password">{{ pageData?.errors?.password }}</span>
 
-        <SubmitButton @click="clearErrs" url="/login" :formData="auth" :onErr="setErrs">
+        <SubmitButton class="mt-2 bg-blue-700 text-white rounded p-1" @click="clearErrs" url="/login" :formData="auth" :onErr="setErrs">
             Login
         </SubmitButton>
     </form>
