@@ -256,7 +256,6 @@ func main() {
 		r.Static("/assets", "dist/assets")
 		r.Static("/dist", "dist")
 		r.Use(sessions.Sessions("XSRF-TOKEN", cookie.NewStore(secret)))
-		r.Use(middleware.GenerateCSRFToken)
 		r.Use(middleware.CheckCSRFToken)
 
 		r.HTMLRender = createMyRender()
