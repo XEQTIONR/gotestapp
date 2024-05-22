@@ -8,6 +8,7 @@ export async function useData(to, router) {
         window.valid = false
     } else {
         try {
+            axios.defaults.withXSRFToken = true;
             const response = await axios.get(to)
             data = response.data
 

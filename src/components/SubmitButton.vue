@@ -29,6 +29,7 @@ export default  {
                     }
                 })
                 .catch(err => {
+                    console.log("ON CATCH", err)
                     if (this.onErr) {
                         this.onErr(err?.response?.data?.error)
                     }

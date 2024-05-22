@@ -11,6 +11,7 @@
         action="/login" 
         method="POST"
     >
+        <span v-if="errs?.csrf">{{ errs.csrf }}</span>
         <label>Username</label>
         <input class="bg-gray-100" v-model="auth.username" type="text" name="username" />
 
@@ -22,6 +23,7 @@
         <SubmitButton class="mt-2 bg-blue-700 text-white rounded p-1" @click="clearErrs" url="/login" :formData="auth" :onErr="setErrs">
             Login
         </SubmitButton>
+        <button type="submit">Login non Ajax</button>
     </form>
 </div>
 </template>

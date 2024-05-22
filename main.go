@@ -25,6 +25,7 @@ type Person struct {
 }
 
 const userkey = "user"
+const csrftokenkey = "XSRF-TOKEN"
 
 func createMyRender() multitemplate.Renderer {
 	r := multitemplate.NewRenderer()
@@ -75,7 +76,6 @@ type authCreds struct {
 }
 
 func login(c *gin.Context) {
-
 	var (
 		creds        authCreds
 		session      sessions.Session = sessions.Default(c)
@@ -167,7 +167,7 @@ func logout(c *gin.Context) {
 	}
 
 	session.Delete(userkey)
-	session.Delete("csrf_token")
+	session.Delete(csrftokenkey)
 
 	if err := session.Save(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session"})
@@ -226,7 +226,7 @@ func respond(c *gin.Context, data map[string]any) {
 	acceptHeader := c.Request.Header.Get("Accept")
 	session := sessions.Default(c)
 
-	data["csrf_token"] = session.Get("csrf_token")
+	data[csrftokenkey] = session.Get(csrftokenkey)
 
 	if strings.Contains(acceptHeader, "application/json") {
 		c.JSON(http.StatusOK, data)
@@ -255,9 +255,9 @@ func main() {
 		r := gin.New()
 		r.Static("/assets", "dist/assets")
 		r.Static("/dist", "dist")
-		r.Use(sessions.Sessions("mysessions", cookie.NewStore(secret)))
-
+		r.Use(sessions.Sessions("XSRF-TOKEN", cookie.NewStore(secret)))
 		r.Use(middleware.GenerateCSRFToken)
+		r.Use(middleware.CheckCSRFToken)
 
 		r.HTMLRender = createMyRender()
 
@@ -289,10 +289,6 @@ func main() {
 			})
 		})
 
-		r.GET("/test-route", func(c *gin.Context) {
-			c.JSON(http.StatusOK, gin.H{"tst0field": "tesst-data"})
-		})
-
 		r.GET("/login", func(c *gin.Context) {
 			session := sessions.Default(c)
 			user := session.Get(userkey)
@@ -307,8 +303,8 @@ func main() {
 				respond(c, map[string]any{"user": user, "to": to, "errors": errors})
 			}
 		})
-
 		r.POST("/login", login)
+
 		r.POST("logout", logout)
 
 		r.GET("/register", func(c *gin.Context) {
