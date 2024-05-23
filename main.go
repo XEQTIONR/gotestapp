@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"gotestapp/mail"
@@ -25,7 +26,6 @@ type Person struct {
 }
 
 const userkey = "user"
-const csrftokenkey = "XSRF-TOKEN"
 
 func createMyRender() multitemplate.Renderer {
 	r := multitemplate.NewRenderer()
@@ -47,7 +47,7 @@ func AuthRequired(c *gin.Context) {
 		session.Save()
 
 		if strings.Contains(acceptHeader, "application/json") {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"errors": "unauthorized"})
 		} else {
 			c.Redirect(http.StatusTemporaryRedirect, "/login")
 		}
@@ -96,7 +96,7 @@ func login(c *gin.Context) {
 
 	// Validate form input
 	if strings.Trim(username, " ") == "" || strings.Trim(password, " ") == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Parameters can't be empty"})
+		c.JSON(http.StatusBadRequest, gin.H{"errors": "Parameters can't be empty"})
 		return
 	}
 
@@ -111,7 +111,7 @@ func login(c *gin.Context) {
 		if user.CheckPasswordHash(password) {
 			session.Set(userkey, user.Username) // In real world usage you'd set this to the users ID
 			if err := session.Save(); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session in login"})
+				c.JSON(http.StatusInternalServerError, gin.H{"errors": "Failed to save session in login"})
 				return
 			} else {
 				acceptHeader := c.Request.Header.Get("Accept")
@@ -162,15 +162,14 @@ func logout(c *gin.Context) {
 	session := sessions.Default(c)
 	user := session.Get(userkey)
 	if user == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session token"})
+		c.JSON(http.StatusBadRequest, gin.H{"errors": "Invalid session token"})
 		return
 	}
 
 	session.Delete(userkey)
-	session.Delete(csrftokenkey)
 
 	if err := session.Save(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session"})
+		c.JSON(http.StatusInternalServerError, gin.H{"errors": "Failed to save session"})
 		return
 	}
 	c.Redirect(http.StatusFound, "/")
@@ -209,7 +208,6 @@ func register(c *gin.Context) {
 	if password == confirmPassword {
 		user := users.User{Username: username, Email: email}
 		if err := user.SetPassword(password); err != nil {
-			fmt.Printf("ERR SET PASSWORD: %v\n", err)
 		}
 
 		if err := user.Save(); err != nil {
@@ -224,9 +222,6 @@ func register(c *gin.Context) {
 
 func respond(c *gin.Context, data map[string]any) {
 	acceptHeader := c.Request.Header.Get("Accept")
-	session := sessions.Default(c)
-
-	data[csrftokenkey] = session.Get(csrftokenkey)
 
 	if strings.Contains(acceptHeader, "application/json") {
 		c.JSON(http.StatusOK, data)
@@ -235,13 +230,13 @@ func respond(c *gin.Context, data map[string]any) {
 	}
 }
 
-func respondWithError(c *gin.Context, err map[string]any, errorCode int) {
+func respondWithError(c *gin.Context, data map[string]any, errorCode int) {
 	acceptHeader := c.Request.Header.Get("Accept")
 
 	if strings.Contains(acceptHeader, "application/json") {
-		c.JSON(errorCode, err)
+		c.JSON(errorCode, data)
 	} else {
-		c.HTML(errorCode, "home", gin.H{"error": err})
+		c.HTML(errorCode, "home", gin.H{"data": data})
 	}
 }
 
@@ -256,9 +251,11 @@ func main() {
 		r.Static("/assets", "dist/assets")
 		r.Static("/dist", "dist")
 		r.Use(sessions.Sessions("XSRF-TOKEN", cookie.NewStore(secret)))
-		r.Use(middleware.CheckCSRFToken)
+		r.Use(middleware.CheckCSRFToken())
 
 		r.HTMLRender = createMyRender()
+
+		gob.Register(&map[string]string{})
 
 		r.GET("/", func(c *gin.Context) {
 			session := sessions.Default(c)

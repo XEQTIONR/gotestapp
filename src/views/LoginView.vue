@@ -11,7 +11,10 @@
         action="/login" 
         method="POST"
     >
-        <span v-if="errs?.csrf">{{ errs.csrf }}</span>
+        <div v-if="errs || pageData?.errors" class="my-2 bg-red-300">
+            <span :key="name" v-for="(value, name) in errs">{{ value }}</span>
+            <span :key="name" v-for="(value, name) in pageData?.errors">{{ value }}</span>
+        </div>
         <label>Username</label>
         <input class="bg-gray-100" v-model="auth.username" type="text" name="username" />
 
@@ -19,6 +22,7 @@
         <input class="bg-gray-100" v-model="auth.password" type="password" name="password" />
         <span v-if="errs?.password">{{ errs.password }}</span>
         <span v-if="pageData?.errors?.password">{{ pageData?.errors?.password }}</span>
+        
 
         <SubmitButton class="mt-2 bg-blue-700 text-white rounded p-1" @click="clearErrs" url="/login" :formData="auth" :onErr="setErrs">
             Login
@@ -58,22 +62,37 @@ export default {
         clearErrs() {
             this.errs = null
 
-            if (this.pageData.errors) {
+            if (this.pageData?.errors) {
                 this.pageData.errors = null
             }
         }
     },
 
+    computed: {
+        errors() {
+            if (this.pageData?.errors) {
+                return this.pageData.errors
+            }
+
+            if (this.errs) {
+                return this.errs
+            }
+
+            return null
+        }
+    },
+
     mounted() {
-        this.clearErrs();
-        
+        if (window.apiData) {
+            this.pageData = window.apiData
+            window.apiData = null
+            window.valid = false
+        }
+
         if (this.pageData?.user) {
             this.$router.push('/private/me')
         }
     },
 
-    beforeRouteEnter (to, from, next) {
-        next(vm => vm.pageData = window.data)
-    },
 }
 </script>

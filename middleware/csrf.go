@@ -4,33 +4,36 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
-func CheckCSRFToken(c *gin.Context) {
-	for _, v := range []string{"POST", "PUT", "PATCH", "DELETE"} {
-		if c.Request.Method == v {
-			header := c.Request.Header.Get("X-XSRF-TOKEN")
-			cookie, err := c.Cookie("XSRF-TOKEN")
-			acceptHeader := c.Request.Header.Get("Accept")
-			referer := c.Request.Header.Get("Referer")
+func CheckCSRFToken() gin.HandlerFunc {
+	return func(c *gin.Context) {
 
-			if err != nil {
+		for _, v := range []string{"POST", "PUT", "PATCH", "DELETE"} {
+			if c.Request.Method == v {
+				header := c.Request.Header.Get("X-XSRF-TOKEN")
+				cookie, _ := c.Cookie("XSRF-TOKEN")
+				acceptHeader := c.Request.Header.Get("Accept")
+				referer := c.Request.Header.Get("Referer")
+				session := sessions.Default(c)
+
 				if strings.Contains(acceptHeader, "application/json") {
-					c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{"csrf": "Form timeout, try again"}})
+					c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{"errors": gin.H{"csrf": "Invalid CSRF token (AJAX)"}})
+					return
 				} else {
-					c.Redirect(http.StatusTemporaryRedirect, referer)
+					if cookie != header {
+						session.Set("errors", map[string]string{"csrf": "Invalid CSRF TOKEN (non AJAX)"})
+						session.Save()
+
+						c.Redirect(http.StatusFound, referer)
+						c.Abort()
+					}
 				}
-				return
-			} else if cookie != header {
-				if strings.Contains(acceptHeader, "application/json") {
-					c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{"csrf": "Form timeout, try again"}})
-				} else {
-					c.Redirect(http.StatusTemporaryRedirect, referer)
-				}
-				return
 			}
 		}
+		c.Next()
 	}
-	c.Next()
+
 }
