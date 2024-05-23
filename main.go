@@ -153,7 +153,7 @@ func login(c *gin.Context) {
 		return
 	}
 
-	respondWithError(c, map[string]interface{}{"error": errorMsg, "to": toStr}, http.StatusUnprocessableEntity)
+	respondWithError(c, map[string]interface{}{"errors": errorMsg, "to": toStr}, http.StatusUnprocessableEntity)
 	//respond(c, map[string]interface{}{"error": errorMsg, "to": toStr})
 }
 

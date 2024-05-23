@@ -20,10 +20,13 @@ func CheckCSRFToken() gin.HandlerFunc {
 				session := sessions.Default(c)
 
 				if strings.Contains(acceptHeader, "application/json") {
-					c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{"errors": gin.H{"csrf": "Invalid CSRF token (AJAX)"}})
-					return
-				} else {
 					if cookie != header {
+						c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{"errors": gin.H{"csrf": "Invalid CSRF token (AJAX)"}})
+						return
+					}
+				} else {
+					formData := c.PostForm("csrf_token")
+					if cookie != formData {
 						session.Set("errors", map[string]string{"csrf": "Invalid CSRF TOKEN (non AJAX)"})
 						session.Save()
 

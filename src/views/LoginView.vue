@@ -15,6 +15,9 @@
             <span :key="name" v-for="(value, name) in errs">{{ value }}</span>
             <span :key="name" v-for="(value, name) in pageData?.errors">{{ value }}</span>
         </div>
+
+        <input type="hidden" name="csrf_token" :value="csrf_token" />
+
         <label>Username</label>
         <input class="bg-gray-100" v-model="auth.username" type="text" name="username" />
 
@@ -24,10 +27,10 @@
         <span v-if="pageData?.errors?.password">{{ pageData?.errors?.password }}</span>
         
 
-        <SubmitButton class="mt-2 bg-blue-700 text-white rounded p-1" @click="clearErrs" url="/login" :formData="auth" :onErr="setErrs">
+        <SubmitButton class="my-2 bg-blue-700 text-white rounded p-1" @click="clearErrs" url="/login" :formData="auth" :onErr="setErrs">
             Login
         </SubmitButton>
-        <button type="submit">Login non Ajax</button>
+        <button class="bg-cyan-300 rounded p-1" type="submit">Login non Ajax</button>
     </form>
 </div>
 </template>
@@ -57,9 +60,11 @@ export default {
 
     methods: {
         setErrs(val) {
+            console.log('setErrs', val)
             this.errs = val
         },
         clearErrs() {
+            console.log('clearErrs')
             this.errs = null
 
             if (this.pageData?.errors) {
@@ -79,10 +84,24 @@ export default {
             }
 
             return null
+        },
+
+        csrf_token() {
+            let cookies = document.cookie.split("; ")
+
+            for (let i=0; i<cookies.length; i++) {
+                let [key, val] = cookies[i].split("=")
+
+                if (key == "XSRF-TOKEN") {
+                    return val
+                }
+            }
+            return ""
         }
     },
 
     mounted() {
+        console.log('LoginView  mounted', window.apiData)
         if (window.apiData) {
             this.pageData = window.apiData
             window.apiData = null
