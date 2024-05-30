@@ -339,8 +339,9 @@ func main() {
 				})
 			})
 		}
+		host := os.Getenv("APP_HOST")
 		port := os.Getenv("APP_PORT")
-		r.Run("127.0.0.1:" + port) // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+		r.Run(host + ":" + port) // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 
 	}
 
