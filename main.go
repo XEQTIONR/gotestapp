@@ -105,10 +105,10 @@ func login(c *gin.Context) {
 
 	to := session.Get("to")
 	toStr, ok := to.(string)
-	session.Delete("to")
 
 	if user.Id > 0 {
 		if user.CheckPasswordHash(password) {
+			session.Delete("to")
 			session.Set(userkey, user.Username) // In real world usage you'd set this to the users ID
 			if err := session.Save(); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"errors": "Failed to save session in login"})
@@ -208,6 +208,7 @@ func register(c *gin.Context) {
 	if password == confirmPassword {
 		user := users.User{Username: username, Email: email}
 		if err := user.SetPassword(password); err != nil {
+			fmt.Printf("Error setting password: %v\n", err)
 		}
 
 		if err := user.Save(); err != nil {
@@ -338,8 +339,8 @@ func main() {
 				})
 			})
 		}
-
-		r.Run("127.0.0.1:9999") // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+		port := os.Getenv("APP_PORT")
+		r.Run("127.0.0.1:" + port) // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 
 	}
 
