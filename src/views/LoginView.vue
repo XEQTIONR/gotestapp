@@ -97,20 +97,18 @@ export default {
                 }
             }
             return ""
-        }
+        },
     },
 
-    mounted() {
-        console.log('LoginView  mounted', window.apiData)
-        if (window.apiData) {
-            this.pageData = window.apiData
-            window.apiData = null
-            window.valid = false
-        }
-
-        if (this.pageData?.user) {
-            this.$router.push('/private/me')
-        }
+    watch: {
+        pageData(value) {
+            if (value.user) {
+                this.$router.push('/private/me')
+            }
+        },
+    }, 
+    beforeRouteEnter (to, from, next) {
+        next(vm => vm.pageData = window.data)
     },
 
 }

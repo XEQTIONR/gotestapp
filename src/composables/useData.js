@@ -2,10 +2,9 @@ import axios from 'axios'
 
 export async function useData(to, router) {
     let data = {}
-    if (window.originURL == to && window.valid) {
+    if (window.originURL == to) {
         // dont make api call
         data = window.apiData
-        window.valid = false
     } else {
         try {
             axios.defaults.withXSRFToken = true;
