@@ -42,8 +42,7 @@ func (u *User) SetPassword(password string) error {
 }
 
 func (u *User) Save() error {
-	db, err := sql.Open("mysql", dbString)
-	if err == nil {
+	if db, err := sql.Open("mysql", dbString); err == nil {
 		defer db.Close()
 		if insert, err := db.ExecContext(
 			context.Background(), fmt.Sprintf(`
@@ -57,14 +56,18 @@ func (u *User) Save() error {
 					LIMIT 1`, id)); err == nil {
 					results.Next()
 					return results.Scan(&u.Id, &u.Username, &u.Email, &u.CreatedAt, &u.UpdatedAt) // scan error or nil
+				} else {
+					return err // db query error
 				}
-				return err // db query error
+			} else {
+				return err // lastinsertId error
 			}
-			return err // lastinsertId error
+		} else {
+			return err //sql error
 		}
-		return err //insert error
+	} else {
+		return err //db connection error
 	}
-	return err //sql error
 }
 
 func FindByUsername(username string) User {
