@@ -16,6 +16,7 @@ export default {
       pageData: null,
     }
   },
+  
   beforeRouteEnter (to, from, next) {
     next(vm => vm.pageData = window.data)
   },

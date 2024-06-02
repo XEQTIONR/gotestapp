@@ -35,5 +35,8 @@ export default {
             }
         }
     },
+    beforeRouteEnter (to, from, next) {
+        next(vm => vm.pageData = window.data)
+  },
 }
 </script>

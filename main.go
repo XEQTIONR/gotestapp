@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"gotestapp/mail"
+	"gotestapp/middleware"
 	"gotestapp/users"
 	"math/rand"
 	"net/http"
@@ -45,7 +47,7 @@ func AuthRequired(c *gin.Context) {
 		session.Save()
 
 		if strings.Contains(acceptHeader, "application/json") {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"errors": "unauthorized"})
 		} else {
 			c.Redirect(http.StatusTemporaryRedirect, "/login")
 		}
@@ -74,7 +76,6 @@ type authCreds struct {
 }
 
 func login(c *gin.Context) {
-
 	var (
 		creds        authCreds
 		session      sessions.Session = sessions.Default(c)
@@ -95,7 +96,7 @@ func login(c *gin.Context) {
 
 	// Validate form input
 	if strings.Trim(username, " ") == "" || strings.Trim(password, " ") == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Parameters can't be empty"})
+		c.JSON(http.StatusBadRequest, gin.H{"errors": "Parameters can't be empty"})
 		return
 	}
 
@@ -104,13 +105,13 @@ func login(c *gin.Context) {
 
 	to := session.Get("to")
 	toStr, ok := to.(string)
-	session.Delete("to")
 
 	if user.Id > 0 {
 		if user.CheckPasswordHash(password) {
+			session.Delete("to")
 			session.Set(userkey, user.Username) // In real world usage you'd set this to the users ID
 			if err := session.Save(); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session in login"})
+				c.JSON(http.StatusInternalServerError, gin.H{"errors": "Failed to save session in login"})
 				return
 			} else {
 				acceptHeader := c.Request.Header.Get("Accept")
@@ -152,7 +153,7 @@ func login(c *gin.Context) {
 		return
 	}
 
-	respondWithError(c, map[string]interface{}{"error": errorMsg, "to": toStr}, http.StatusUnprocessableEntity)
+	respondWithError(c, map[string]interface{}{"errors": errorMsg, "to": toStr}, http.StatusUnprocessableEntity)
 	//respond(c, map[string]interface{}{"error": errorMsg, "to": toStr})
 }
 
@@ -161,12 +162,14 @@ func logout(c *gin.Context) {
 	session := sessions.Default(c)
 	user := session.Get(userkey)
 	if user == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session token"})
+		c.JSON(http.StatusBadRequest, gin.H{"errors": "Invalid session token"})
 		return
 	}
+
 	session.Delete(userkey)
+
 	if err := session.Save(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session"})
+		c.JSON(http.StatusInternalServerError, gin.H{"errors": "Failed to save session"})
 		return
 	}
 	c.Redirect(http.StatusFound, "/")
@@ -205,7 +208,7 @@ func register(c *gin.Context) {
 	if password == confirmPassword {
 		user := users.User{Username: username, Email: email}
 		if err := user.SetPassword(password); err != nil {
-			fmt.Printf("ERR SET PASSWORD: %v\n", err)
+			fmt.Printf("Error setting password: %v\n", err)
 		}
 
 		if err := user.Save(); err != nil {
@@ -228,13 +231,13 @@ func respond(c *gin.Context, data map[string]any) {
 	}
 }
 
-func respondWithError(c *gin.Context, err map[string]any, errorCode int) {
+func respondWithError(c *gin.Context, data map[string]any, errorCode int) {
 	acceptHeader := c.Request.Header.Get("Accept")
 
 	if strings.Contains(acceptHeader, "application/json") {
-		c.JSON(errorCode, err)
+		c.JSON(errorCode, data)
 	} else {
-		c.HTML(errorCode, "home", gin.H{"error": err})
+		c.HTML(errorCode, "home", gin.H{"data": data})
 	}
 }
 
@@ -248,9 +251,12 @@ func main() {
 		r := gin.New()
 		r.Static("/assets", "dist/assets")
 		r.Static("/dist", "dist")
-		r.Use(sessions.Sessions("mysessions", cookie.NewStore(secret)))
+		r.Use(sessions.Sessions("XSRF-TOKEN", cookie.NewStore(secret)))
+		r.Use(middleware.CheckCSRFToken())
 
 		r.HTMLRender = createMyRender()
+
+		gob.Register(&map[string]string{})
 
 		r.GET("/", func(c *gin.Context) {
 			session := sessions.Default(c)
@@ -280,10 +286,6 @@ func main() {
 			})
 		})
 
-		r.GET("/test-route", func(c *gin.Context) {
-			c.JSON(http.StatusOK, gin.H{"tst0field": "tesst-data"})
-		})
-
 		r.GET("/login", func(c *gin.Context) {
 			session := sessions.Default(c)
 			user := session.Get(userkey)
@@ -298,8 +300,8 @@ func main() {
 				respond(c, map[string]any{"user": user, "to": to, "errors": errors})
 			}
 		})
-
 		r.POST("/login", login)
+
 		r.POST("logout", logout)
 
 		r.GET("/register", func(c *gin.Context) {
@@ -337,8 +339,9 @@ func main() {
 				})
 			})
 		}
-
-		r.Run("127.0.0.1:9999") // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+		host := os.Getenv("APP_HOST")
+		port := os.Getenv("APP_PORT")
+		r.Run(host + ":" + port) // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 
 	}
 
